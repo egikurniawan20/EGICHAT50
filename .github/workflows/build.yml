@@ -1,48 +1,21 @@
-
-name: Build EGI CHAT APK
-
-on:
-  workflow_dispatch:
-  push:
-    branches:
-      - main
-
+name: Build APK
+on: [push, workflow_dispatch]
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Ambil source code
-        uses: actions/checkout@v4
-
-      - name: Siapkan Java
-        uses: actions/setup-java@v4
+      - uses: actions/checkout@v4
+      - run: unzip -q "$(ls *.zip | head -n 1)" -d proj
+      - uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '17'
-
-      - name: Siapkan Node.js
-        uses: actions/setup-node@v4
+      - uses: gradle/actions/setup-gradle@v4
         with:
-          node-version: '20'
-
-      - name: Install Cordova
-        run: npm install -g cordova
-
-      - name: Buat proyek Android
-        run: |
-          cordova create app com.egichat.app "EGI CHAT"
-          cp EGICHAT_CALL_HEADER_DIPERBAIKI.html app/www/index.html
-
-      - name: Konfigurasi Android
-        run: |
-          cd app
-          cordova platform add android@13
-          cordova build android --debug
-
-      - name: Simpan APK
-        uses: actions/upload-artifact@v4
+          gradle-version: '8.5'
+      - run: gradle assembleDebug --no-daemon
+        working-directory: proj
+      - uses: actions/upload-artifact@v4
         with:
-          name: EGI-CHAT-APK
-          path: app/platforms/android/app/build/outputs/apk/debug/app-debug.apk
-          
+          name: EGICHAT-apk
+          path: proj/app/build/outputs/apk/debug/app-debug.apk
